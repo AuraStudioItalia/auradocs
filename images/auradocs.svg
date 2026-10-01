@@ -1,12 +1,12 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
 <rect width="512" height="512" fill="#1E1E1E"/>
 <rect width="512" height="512" fill="white"/>
-<path d="M115 138C115 129.716 121.716 123 130 123H311C319.284 123 326 129.716 326 138V410C326 418.284 319.284 425 311 425H130C121.716 425 115 418.284 115 410V138Z" fill="url(#paint0_linear_0_1)"/>
+<path d="M115 153C115 136.431 128.431 123 145 123H296C312.569 123 326 136.431 326 153V395C326 411.569 312.569 425 296 425H145C128.431 425 115 411.569 115 395V153Z" fill="url(#paint0_linear_0_1)"/>
 <g filter="url(#filter0_d_0_1)">
-<path d="M175 109C175 100.716 181.716 94 190 94H371C379.284 94 386 100.716 386 109V381C386 389.284 379.284 396 371 396H190C181.716 396 175 389.284 175 381V109Z" fill="url(#paint1_linear_0_1)"/>
+<path d="M175 124C175 107.431 188.431 94 205 94H356C372.569 94 386 107.431 386 124V366C386 382.569 372.569 396 356 396H205C188.431 396 175 382.569 175 366V124Z" fill="url(#paint1_linear_0_1)"/>
 </g>
-<rect x="203" y="133" width="132" height="20" rx="10" fill="white"/>
-<rect x="203" y="169" width="97" height="20" rx="10" fill="white"/>
+<rect x="203" y="157" width="132" height="20" rx="10" fill="white"/>
+<rect x="203" y="188" width="97" height="20" rx="10" fill="white"/>
 <defs>
 <filter id="filter0_d_0_1" x="150" y="79" width="251" height="342" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
 <feFlood flood-opacity="0" result="BackgroundImageFix"/>
@@ -20,10 +20,12 @@
 </filter>
 <linearGradient id="paint0_linear_0_1" x1="254.5" y1="51" x2="320" y2="353" gradientUnits="userSpaceOnUse">
 <stop stop-color="#E365D6"/>
+<stop offset="0.539836" stop-color="#6A2FFF"/>
 <stop offset="1" stop-color="#FF87F3"/>
 </linearGradient>
 <linearGradient id="paint1_linear_0_1" x1="280.5" y1="94" x2="346" y2="396" gradientUnits="userSpaceOnUse">
 <stop stop-color="#FF00E5"/>
+<stop offset="0.322765" stop-color="#6A2FFF"/>
 <stop offset="1" stop-color="#FF5DEF"/>
 </linearGradient>
 </defs>

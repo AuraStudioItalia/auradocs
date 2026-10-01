@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="refresh" content="0;url=../dashboard.html">
+    <script>window.location.replace(new URL('../dashboard.html' + location.search + location.hash, location.href).href);</script>
     <title>Aura Docs Mobile</title>
     <link rel="icon" href="/images/auradocs.svg" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;600&family=Playfair+Display:wght@400;700&family=Courier+Prime&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.2/turndown.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -200,6 +203,7 @@
         }
         #save-status.saving { color: var(--aura-primary); }
         #save-status.saved { color: #22c55e; }
+        #save-status.error, #save-status-mobile.error { color: #ef4444; cursor: pointer; }
 
         /* ── USER SECTION ── */
         .user-section { position: relative; cursor: pointer; z-index: 1001; flex-shrink: 0; }
@@ -1979,9 +1983,13 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const turndownService = new TurndownService();
+function renderMarkdown(markdown) {
+    return DOMPurify.sanitize(marked.parse(markdown || ''), { USE_PROFILES: { html: true } });
+}
 
 let currentDocId = null;
 let saveTimeout = null;
+let saveStatusTimeout = null;
 let currentMode = 'visual';
 let tempSelectedUser = null;
 
@@ -2430,15 +2438,20 @@ function showSaveStatus(state) {
     const text = document.getElementById('save-text');
     const elM = document.getElementById('save-status-mobile');
     const textM = document.getElementById('save-text-mobile');
+    clearTimeout(saveStatusTimeout);
     [el, elM].forEach((e, i) => {
         if (!e) return;
         const t = i === 0 ? text : textM;
         e.className = state;
+        e.onclick = state === 'error' ? autoSave : null;
+        e.title = state === 'error' ? 'Tocca per riprovare il salvataggio' : '';
         if (state === 'saving') { e.style.display = 'flex'; t.textContent = 'Salvataggio...'; }
-        else if (state === 'saved') { e.style.display = 'flex'; t.textContent = 'Salvato'; setTimeout(() => { e.style.display = 'none'; }, 2500); }
+        else if (state === 'saved') { e.style.display = 'flex'; t.textContent = 'Salvato'; }
+        else if (state === 'error') { e.style.display = 'flex'; t.textContent = 'Errore salvataggio'; }
     });
+    if (state === 'saved') saveStatusTimeout = setTimeout(() => [el, elM].forEach(e => { if (e) e.style.display = 'none'; }), 2500);
     if (window.innerWidth >= 640) {
-        el.style.display = state === 'saving' || state === 'saved' ? 'flex' : 'none';
+        el.style.display = state === 'saving' || state === 'saved' || state === 'error' ? 'flex' : 'none';
     }
 }
 
@@ -2458,7 +2471,7 @@ function setMode(mode) {
         );
     });
     if (mode === 'visual') {
-        visual.innerHTML = marked.parse(textarea.value);
+        visual.innerHTML = renderMarkdown(textarea.value);
         visual.style.display = 'block';
         textarea.style.display = 'none';
         reattachImageHandlers();
@@ -2769,7 +2782,10 @@ function autoSave() {
             fontSize: visualDiv.style.fontSize || "16px",
             fontFamily: visualDiv.style.fontFamily || "Poppins",
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => showSaveStatus('saved'));
+        }).then(() => showSaveStatus('saved')).catch(error => {
+            console.error('Errore durante il salvataggio del documento:', error);
+            showSaveStatus('error');
+        });
     }, 1000);
 }
 
@@ -2872,7 +2888,7 @@ function openDoc(id, data) {
     document.getElementById('font-size').value = parseInt(data.fontSize) || 16;
     document.getElementById('font-family').value = data.fontFamily || "Poppins";
 
-    visual.innerHTML = marked.parse(data.content || "");
+    visual.innerHTML = renderMarkdown(data.content || "");
     setMode('visual');
 }
 
@@ -3186,7 +3202,7 @@ function applyTextToDoc(newText) {
     const visual = document.getElementById('visual-editor');
     const textarea = document.getElementById('editor-textarea');
     textarea.value = newText;
-    visual.innerHTML = marked.parse(newText);
+    visual.innerHTML = renderMarkdown(newText);
     if (currentMode !== 'visual') setMode('visual');
     autoSave();
     autoResizeTextarea(textarea);
@@ -3202,7 +3218,7 @@ function nyraAppendMessage(role, html, withApply = false, applyText = '') {
     block.appendChild(label);
     const bubble = document.createElement('div');
     bubble.className = `nyra-msg ${role}`;
-    if (role === 'bot') { try { bubble.innerHTML = marked.parse(html); } catch(e) { bubble.textContent = html; } }
+    if (role === 'bot') { try { bubble.innerHTML = renderMarkdown(html); } catch(e) { bubble.textContent = html; } }
     else { bubble.textContent = html; }
     if (withApply && applyText) {
         const btn = document.createElement('button');

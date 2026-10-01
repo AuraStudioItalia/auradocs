@@ -8,6 +8,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Roboto:wght@300;400;700&family=Open+Sans:wght@300;400;600&family=Playfair+Display:wght@400;700&family=Courier+Prime&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/diff@5.2.0/dist/diff.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.2.6/purify.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/turndown/7.1.2/turndown.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
@@ -137,6 +139,7 @@
         }
         #save-status.saving { color: var(--aura-primary); }
         #save-status.saved { color: #22c55e; }
+        #save-status.error { color: #ef4444; cursor: pointer; }
 
         .user-section { position: relative; cursor: pointer; z-index: 1001; display: none; }
         .user-section.editor-visible { display: block; }
@@ -289,6 +292,8 @@
         .sidebar-user-dropdown a { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-sm); text-decoration: none; color: var(--text-main); font-size: 13px; font-weight: 500; transition: var(--transition); }
         .sidebar-user-dropdown a:hover { background: var(--bg-main); }
         .sidebar-user-dropdown a i { width: 14px; text-align: center; color: var(--text-secondary); font-size: 12px; }
+        .sidebar-mobile-close, #mobile-nav-toggle, .mobile-new-doc, .toolbar-mode-row, #save-status-mobile { display: none; }
+        #sidebar-backdrop { display: none; }
 
         /* ── MAIN AREA (new dashboard) ── */
         #dashboard-main {
@@ -304,8 +309,15 @@
         .filelist-header {
             padding: 22px 28px 10px;
             display: flex; align-items: center; justify-content: space-between;
+            gap: 12px;
         }
         .filelist-header h2 { font-size: 18px; font-weight: 600; }
+        #mobile-nav-toggle {
+            width: 38px; height: 38px; flex: 0 0 38px;
+            place-items: center; border: 1px solid var(--border);
+            border-radius: var(--radius-sm); background: var(--bg-card);
+            color: var(--text-main); cursor: pointer;
+        }
 
         /* Import button in header */
         .filelist-header-actions { display: flex; align-items: center; gap: 8px; }
@@ -321,6 +333,13 @@
         }
         .btn-import-adx:hover { background: rgba(224,8,246,0.12); border-color: var(--aura-primary); }
         .btn-import-adx i { font-size: 11px; }
+        .mobile-new-doc {
+            align-items: center; justify-content: center; gap: 7px;
+            min-height: 38px; padding: 7px 14px; border: 0;
+            border-radius: 50px; background: var(--aura-gradient);
+            color: white; font: 600 12px 'Poppins', sans-serif;
+            cursor: pointer; white-space: nowrap;
+        }
 
         .filelist-table {
             flex: 1;
@@ -837,6 +856,52 @@
         }
         .nyra-context-badge i { font-size: 9px; }
 
+        .nyra-request-controls { display: flex; gap: 8px; margin-bottom: 8px; }
+        .nyra-request-control { min-width: 0; flex: 1; display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 10px; }
+        .nyra-request-control span { white-space: nowrap; }
+        .nyra-request-control select { width: 100%; min-width: 0; height: 32px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); color: var(--text-main); font-size: 11px; }
+        #nyra-context-summary { margin-bottom: 8px; color: var(--text-muted); font-size: 10px; line-height: 1.4; }
+        #nyra-context-preview { display: none; width: 100%; min-height: 64px; max-height: 150px; margin-bottom: 8px; padding: 8px 10px; resize: vertical; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-main); color: var(--text-main); font: 11px/1.5 'Courier Prime', monospace; }
+        #nyra-context-preview:focus { outline: 2px solid var(--aura-primary); outline-offset: 1px; }
+        .nyra-session-note { margin-top: 7px; color: var(--text-muted); font-size: 10px; }
+        #nyra-cancel-btn { display: none; align-items: center; gap: 6px; padding: 0 10px; min-height: 32px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text-secondary); cursor: pointer; font-size: 11px; white-space: nowrap; }
+        #nyra-cancel-btn:hover { color: #b3261e; border-color: #b3261e; }
+        .nyra-retry-btn, .nyra-restore-btn, .nyra-preview-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; margin-top: 8px; padding: 0 11px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--aura-primary); cursor: pointer; font-size: 11px; font-weight: 600; }
+        .nyra-retry-btn:hover, .nyra-restore-btn:hover, .nyra-preview-btn:hover { background: var(--bg-hover); }
+        #nyra-preview-modal { display: none; position: fixed; inset: 0; z-index: 6000; align-items: center; justify-content: center; padding: 18px; background: rgba(32,33,36,.48); backdrop-filter: blur(3px); }
+        .nyra-preview-dialog { display: flex; flex-direction: column; width: min(760px, 100%); max-height: min(88vh, 820px); background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow-xl); overflow: hidden; }
+        .nyra-preview-head, .nyra-preview-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+        .nyra-preview-head { border-bottom: 1px solid var(--border); }
+        .nyra-preview-head h3 { font-size: 16px; font-weight: 600; }
+        .nyra-preview-head p { margin-top: 3px; color: var(--text-secondary); font-size: 12px; }
+        .nyra-preview-close { width: 36px; height: 36px; border: 0; border-radius: 50%; background: transparent; color: var(--text-secondary); cursor: pointer; }
+        .nyra-preview-close:hover { background: var(--bg-hover); }
+        #nyra-diff-list { overflow: auto; padding: 12px 18px; }
+        .nyra-diff-change { margin: 8px 0; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+        .nyra-diff-toggle { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--bg-main); font-size: 12px; font-weight: 500; cursor: pointer; }
+        .nyra-diff-toggle input { accent-color: var(--aura-primary); }
+        .nyra-diff-sides { display: grid; grid-template-columns: 1fr 1fr; }
+        .nyra-diff-side { min-width: 0; padding: 10px 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.6 'Courier Prime', monospace; }
+        .nyra-diff-side + .nyra-diff-side { border-left: 1px solid var(--border); }
+        .nyra-diff-side.old { background: rgba(179,38,30,.06); }
+        .nyra-diff-side.new { background: rgba(24,128,56,.07); }
+        .nyra-preview-actions { justify-content: flex-end; border-top: 1px solid var(--border); }
+        .nyra-preview-actions button { min-height: 38px; padding: 0 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-card); color: var(--text-main); cursor: pointer; font-size: 12px; font-weight: 600; }
+        .nyra-preview-actions .nyra-preview-apply { border-color: transparent; background: var(--aura-primary); color: #fff; }
+        .nyra-preview-actions .nyra-preview-apply:hover { background: var(--aura-primary-dark); }
+        .nyra-preview-actions .nyra-preview-apply:disabled { opacity: .45; cursor: not-allowed; }
+        @media (max-width: 520px) {
+            .nyra-request-controls { flex-direction: column; }
+            .nyra-request-control { justify-content: space-between; }
+            .nyra-request-control select { width: 62%; }
+            #nyra-preview-modal { padding: 8px; }
+            .nyra-preview-dialog { max-height: 94vh; border-radius: 12px; }
+            .nyra-preview-head, .nyra-preview-actions { padding: 12px; }
+            #nyra-diff-list { padding: 8px; }
+            .nyra-diff-sides { grid-template-columns: 1fr; }
+            .nyra-diff-side + .nyra-diff-side { border-left: 0; border-top: 1px solid var(--border); }
+        }
+
         /* ── COLLAB MODAL ── */
         #collab-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(6px); animation: fadeIn 0.2s ease; }
         .modal-box { background: var(--bg-card); padding: 28px; border-radius: var(--radius-xl); width: 90%; max-width: 400px; box-shadow: var(--shadow-xl); max-height: 90vh; overflow-y: auto; border: 1px solid var(--border); animation: modalSlide 0.3s ease; }
@@ -1194,16 +1259,90 @@
 
         @media (max-width: 768px) {
             :root { --nyra-panel: 100vw; }
-            #nyra-panel.open { position: absolute; right: 0; top: 0; height: 100%; z-index: 200; box-shadow: var(--shadow-xl); }
-            #dashboard-sidebar { display: none; }
+            #nyra-panel { position: absolute; right: 0; top: 0; height: 100%; }
+            #nyra-panel.open { z-index: 200; box-shadow: var(--shadow-xl); }
             .filelist-table-header,
             .filelist-row { grid-template-columns: 1fr 44px; }
+            .filelist-col-visto, .filelist-col-creato, .filelist-col-loc,
+            .filelist-cell-visto, .filelist-cell-creato, .filelist-cell-loc { display: none; }
+            #dashboard-sidebar {
+                display: flex;
+                position: fixed; inset: 58px auto 0 0;
+                width: min(300px, calc(100vw - 48px)); min-width: 0;
+                height: auto; z-index: 1500;
+                transform: translateX(-105%);
+                visibility: hidden;
+                transition: transform 0.25s ease, visibility 0s linear 0.25s;
+                box-shadow: var(--shadow-xl);
+            }
+            body.mobile-sidebar-open #dashboard-sidebar {
+                transform: translateX(0); visibility: visible;
+                transition: transform 0.25s ease, visibility 0s;
+            }
+            #sidebar-backdrop {
+                position: fixed; inset: 58px 0 0; z-index: 1400;
+                background: rgba(12, 12, 16, 0.42);
+            }
+            body.mobile-sidebar-open #sidebar-backdrop { display: block; }
+            .sidebar-mobile-close {
+                display: grid; place-items: center; align-self: flex-end;
+                width: 34px; height: 34px; margin: 0 2px 8px 0;
+                border: 1px solid var(--border); border-radius: var(--radius-sm);
+                background: var(--bg-main); color: var(--text-secondary); cursor: pointer;
+            }
+            #mobile-nav-toggle { display: inline-grid; }
+            .mobile-new-doc { display: inline-flex; }
+            .filelist-header { padding: 14px 16px 10px; flex-wrap: wrap; }
+            .filelist-header h2 { flex: 1; min-width: 0; font-size: 17px; }
+            .filelist-header-actions { width: 100%; }
+            .btn-import-adx, .mobile-new-doc { flex: 1; min-height: 42px; border-radius: var(--radius-sm); }
+            .filelist-table-header, .filelist-row { padding-left: 16px; padding-right: 12px; }
+            .filelist-group-label { padding-left: 16px; }
+            .filelist-menu-btn { opacity: 1; width: 38px; height: 38px; }
+            #editor-view { height: calc(100vh - 58px); height: calc(100dvh - 58px); flex-direction: column; }
+            .brand-group { gap: 8px; min-width: 0; flex: 1; }
+            header { padding: 0 12px; }
+            #doc-title-container { min-width: 0; flex: 1; gap: 0; }
+            #doc-title-input { min-width: 0; max-width: none; flex: 1; font-size: 13px; }
+            #doc-title-container .mode-switch, #doc-title-container #save-status { display: none !important; }
+            .toolbar-mode-row {
+                display: flex; align-items: center; justify-content: space-between;
+                gap: 12px; padding: 8px 12px; flex: 0 0 auto;
+                background: var(--bg-card); border-bottom: 1px solid var(--border);
+            }
+            .toolbar-mode-row .mode-switch { display: flex; margin: 0; }
+            #save-status-mobile {
+                display: none; align-items: center; gap: 5px;
+                padding: 4px 8px; border: 1px solid var(--border);
+                border-radius: var(--radius-sm); background: var(--bg-main);
+                color: var(--text-muted); font-size: 10px; white-space: nowrap;
+            }
+            #save-status-mobile.saving { color: var(--aura-primary); }
+            #save-status-mobile.saved { color: #22c55e; }
+            #save-status-mobile.error { color: #ef4444; cursor: pointer; }
+            #editor-main { align-items: stretch; min-height: 0; padding: 10px 10px 20px; }
+            .toolbar {
+                position: sticky; top: 0; width: 100%; max-width: 100%;
+                justify-content: flex-start; overflow-x: auto; overflow-y: hidden;
+                -webkit-overflow-scrolling: touch; touch-action: pan-x;
+                margin-bottom: 12px; padding: 6px; border-radius: var(--radius-sm);
+            }
+            .canvas { max-width: 100%; padding: 36px 24px; margin-bottom: 24px; border-radius: var(--radius-sm); }
+            #visual-editor, #editor-textarea { min-height: calc(100dvh - 230px); }
         }
         @media (max-width: 600px) {
-            .canvas { padding: 40px 28px; }
-            .toolbar { gap: 1px; padding: 5px 6px; }
+            .canvas { padding: 30px 18px; }
+            .toolbar { gap: 4px; }
+            #filelist-title { font-size: 16px; }
+        }
+        @media (max-width: 380px) {
+            .btn-import-adx span { display: none; }
+            .btn-import-adx { flex: 0 0 48px; padding: 8px; }
+            .mobile-new-doc { flex: 1; }
+            .mode-btn { padding: 4px 10px; }
         }
     </style>
+    <link rel="stylesheet" href="aura-material.css">
 </head>
 <body>
 
@@ -1213,6 +1352,7 @@
             <i class="fas fa-arrow-left"></i>
         </div>
         <img src="images/auradocs.svg" alt="Aura" class="brand-logo" onclick="closeEditor()">
+        <span class="app-wordmark">Aura Docs</span>
         <div id="doc-title-container">
             <input type="text" id="doc-title-input" value="Senza titolo">
             <div class="mode-switch">
@@ -1243,8 +1383,11 @@
 <!-- NEW DASHBOARD: sidebar + main -->
 <div id="dashboard-view">
 
+    <div id="sidebar-backdrop" onclick="closeMobileSidebar()" aria-hidden="true"></div>
+
     <!-- SIDEBAR -->
     <div id="dashboard-sidebar">
+        <button class="sidebar-mobile-close" onclick="closeMobileSidebar()" aria-label="Chiudi navigazione"><i class="fas fa-arrow-left"></i></button>
         <!-- Search -->
         <div class="sidebar-search">
             <i class="fas fa-search"></i>
@@ -1298,11 +1441,13 @@
     <!-- MAIN FILE LIST AREA -->
     <div id="dashboard-main">
         <div class="filelist-header">
+            <button id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Apri navigazione" aria-expanded="false"><i class="fas fa-bars"></i></button>
             <h2 id="filelist-title">Recenti</h2>
             <div class="filelist-header-actions">
-                <button class="btn-import-adx" onclick="triggerAdxImport()">
-                    <i class="fas fa-file-import"></i> Importa .adxe / .adxs
+                <button class="btn-import-adx" onclick="triggerAdxImport()" title="Importa documento" aria-label="Importa documento">
+                    <i class="fas fa-file-import"></i> <span>Importa .adxe / .adxs</span>
                 </button>
+                <button class="mobile-new-doc" onclick="createNewDoc()"><i class="fas fa-plus"></i> Nuovo</button>
             </div>
         </div>
 
@@ -1333,6 +1478,14 @@
     <!-- Read-only banner for .adxs files -->
     <div id="readonly-banner">
         <i class="fas fa-lock"></i> Documento in sola lettura — File .adxs (Aura Docs Sealed)
+    </div>
+
+    <div class="toolbar-mode-row">
+        <div class="mode-switch">
+            <button id="btn-visual-m" class="mode-btn active" onclick="setMode('visual')">Visuale</button>
+            <button id="btn-literal-m" class="mode-btn" onclick="setMode('literal')">Letterale</button>
+        </div>
+        <div id="save-status-mobile" role="status" aria-live="polite"><i class="fas fa-circle" style="font-size:6px;"></i> <span id="save-text-mobile">Salvato</span></div>
     </div>
 
     <div id="editor-main">
@@ -1433,15 +1586,55 @@
 
         <div class="nyra-input-area">
             <div id="nyra-context-indicator" style="display:none;"></div>
+            <div class="nyra-request-controls">
+                <label class="nyra-request-control" for="nyra-intent-mode">
+                    <span>Richiesta</span>
+                    <select id="nyra-intent-mode" aria-label="Tipo di richiesta">
+                        <option value="answer">Risposta</option>
+                        <option value="edit">Modifica documento</option>
+                    </select>
+                </label>
+                <label class="nyra-request-control" for="nyra-context-mode">
+                    <span>Contesto</span>
+                    <select id="nyra-context-mode" aria-label="Contesto da inviare a Nyra">
+                        <option value="document">Documento</option>
+                        <option value="selection" disabled>Selezione corrente</option>
+                        <option value="none">Nessuno</option>
+                    </select>
+                </label>
+            </div>
+            <div id="nyra-context-summary" aria-live="polite">Invierai il contenuto del documento insieme alla richiesta.</div>
+            <textarea id="nyra-context-preview" aria-label="Contesto che verrà inviato a Nyra" placeholder="Testo del contesto"></textarea>
+            <div class="nyra-session-note">I punti di ripristino delle modifiche Nyra restano disponibili solo in questa sessione.</div>
             <div class="nyra-input-row">
                 <textarea id="nyra-input" placeholder="Chiedi a Nyra..." rows="1"
                     oninput="nyraAutoResize(this)"
                     onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();nyraSend();}"></textarea>
+                <button id="nyra-cancel-btn" type="button" onclick="nyraCancelRequest()" aria-label="Interrompi risposta">
+                    <i class="fas fa-stop" aria-hidden="true"></i> Interrompi
+                </button>
                 <button id="nyra-send-btn" onclick="nyraSend()">
                     <i class="fas fa-arrow-up"></i>
                 </button>
             </div>
         </div>
+    </div>
+
+    <div id="nyra-preview-modal" role="dialog" aria-modal="true" aria-labelledby="nyra-preview-title" onclick="if(event.target===this)closeNyraPreview()">
+        <section class="nyra-preview-dialog">
+            <header class="nyra-preview-head">
+                <div>
+                    <h3 id="nyra-preview-title">Anteprima modifiche</h3>
+                    <p>Seleziona le parti da applicare. Le modifiche non selezionate resteranno invariate.</p>
+                </div>
+                <button class="nyra-preview-close" type="button" onclick="closeNyraPreview()" aria-label="Chiudi anteprima"><i class="fas fa-times"></i></button>
+            </header>
+            <div id="nyra-diff-list"></div>
+            <footer class="nyra-preview-actions">
+                <button type="button" onclick="closeNyraPreview()">Annulla</button>
+                <button type="button" class="nyra-preview-apply" id="nyra-preview-apply" onclick="applySelectedNyraChanges()">Applica selezionate</button>
+            </footer>
+        </section>
     </div>
 
 </div>
@@ -1459,7 +1652,12 @@
                 <input type="checkbox" id="public-check" onchange="togglePublic()">
             </div>
             <div id="public-url-container" style="display:none;">
-                <input type="text" id="public-url-input" readonly class="modal-input" style="font-size:11px; margin-top:4px;">
+                <div class="public-url-actions">
+                    <input type="text" id="public-url-input" readonly class="modal-input" style="font-size:11px; margin-top:4px;">
+                    <button type="button" class="public-link-copy" onclick="copyPublicLink()" title="Copia link pubblico" aria-label="Copia link pubblico">
+                        <i class="fas fa-copy" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
         </div>
         <p style="font-size: 12px; color: var(--text-secondary); margin: 18px 0 8px; font-weight: 500;">Aggiungi collaboratore</p>
@@ -1704,15 +1902,29 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const turndownService = new TurndownService();
+function renderMarkdown(markdown) {
+    return DOMPurify.sanitize(marked.parse(markdown || ''), { USE_PROFILES: { html: true } });
+}
 
 // ── STATE ──
 let currentDocId = null;
 let saveTimeout = null;
+let saveStatusTimeout = null;
 let currentMode = 'visual';
 let tempSelectedUser = null;
 let nyraIsOpen = false;
 let nyraIsProcessing = false;
 let nyraHistory = [];
+let nyraAbortController = null;
+let nyraActiveRequest = null;
+let nyraLastFailedRequest = null;
+let nyraRestorePoints = [];
+let nyraSelectedText = '';
+let nyraSelectedDocumentId = null;
+let nyraPendingProposal = null;
+let nyraCanEdit = false;
+let nyraPreviewReturnFocus = null;
+let nyraDocumentSessionId = null;
 let resizingImg = null;
 let resizeStartX = 0;
 let resizeStartW = 0;
@@ -2058,7 +2270,24 @@ function toggleSidebarUserDropdown() {
 }
 
 // ── SIDEBAR FILTER ──
+function toggleMobileSidebar(forceOpen) {
+    const shouldOpen = typeof forceOpen === 'boolean'
+        ? forceOpen
+        : !document.body.classList.contains('mobile-sidebar-open');
+    document.body.classList.toggle('mobile-sidebar-open', shouldOpen);
+    document.getElementById('mobile-nav-toggle').setAttribute('aria-expanded', String(shouldOpen));
+}
+
+function closeMobileSidebar() {
+    toggleMobileSidebar(false);
+}
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeMobileSidebar();
+});
+
 function setSidebarFilter(filter) {
+    closeMobileSidebar();
     sidebarFilter = filter;
     currentFolderFilter = (filter !== 'recenti' && filter !== 'docs') ? filter : null;
     document.getElementById('nav-recenti').classList.toggle('active', filter === 'recenti');
@@ -2083,6 +2312,7 @@ function filterDocsFromSidebar(query) {
 
 // ── FONT SIZE ──
 function changeFontSize(size) {
+    if (!nyraCanEdit || isReadOnly) return;
     if (currentMode === 'visual') {
         document.getElementById('visual-editor').style.fontSize = size + "px";
         autoSave();
@@ -2096,6 +2326,28 @@ async function togglePublic() {
     container.style.display = isPublic ? 'block' : 'none';
     if (isPublic) document.getElementById('public-url-input').value = `https://docs.aurastudioitalia.it/document?id=${currentDocId}`;
     await db.collection('documents').doc(currentDocId).update({ isPublic });
+}
+
+async function copyPublicLink() {
+    const linkInput = document.getElementById('public-url-input');
+    const link = linkInput.value;
+    if (!link) return;
+
+    try {
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(link);
+        } else {
+            linkInput.focus();
+            linkInput.select();
+            if (!document.execCommand('copy')) throw new Error('Copia non supportata');
+        }
+        showToast('Link pubblico copiato');
+    } catch (error) {
+        console.error('Impossibile copiare il link pubblico:', error);
+        showToast('Copia non riuscita. Seleziona il link e copialo manualmente.');
+        linkInput.focus();
+        linkInput.select();
+    }
 }
 
 // ── USER SEARCH ──
@@ -2191,10 +2443,22 @@ function openCollabModal() {
 function showSaveStatus(state) {
     const el = document.getElementById('save-status');
     const text = document.getElementById('save-text');
-    el.style.display = 'flex';
-    el.className = state;
-    if (state === 'saving') { text.textContent = 'Salvataggio...'; }
-    else if (state === 'saved') { text.textContent = 'Salvato'; setTimeout(() => { el.style.display = 'none'; }, 2500); }
+    const mobileEl = document.getElementById('save-status-mobile');
+    const mobileText = document.getElementById('save-text-mobile');
+    clearTimeout(saveStatusTimeout);
+    [[el, text], [mobileEl, mobileText]].forEach(([status, label]) => {
+        if (!status || !label) return;
+        status.style.display = 'flex';
+        status.className = state;
+        status.onclick = state === 'error' ? autoSave : null;
+        status.title = state === 'error' ? 'Clicca per riprovare il salvataggio' : '';
+        if (state === 'saving') label.textContent = 'Salvataggio...';
+        else if (state === 'saved') label.textContent = 'Salvato';
+        else if (state === 'error') label.textContent = 'Errore salvataggio';
+    });
+    if (state === 'saved') saveStatusTimeout = setTimeout(() => {
+        [el, mobileEl].forEach(status => { if (status) status.style.display = 'none'; });
+    }, 2500);
 }
 
 // ── MODE ──
@@ -2202,10 +2466,12 @@ function setMode(mode) {
     currentMode = mode;
     const textarea = document.getElementById('editor-textarea');
     const visual = document.getElementById('visual-editor');
-    document.getElementById('btn-visual').classList.toggle('active', mode === 'visual');
-    document.getElementById('btn-literal').classList.toggle('active', mode === 'literal');
+    ['btn-visual', 'btn-literal', 'btn-visual-m', 'btn-literal-m'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.classList.toggle('active', id.includes('visual') === (mode === 'visual'));
+    });
     if (mode === 'visual') {
-        visual.innerHTML = marked.parse(textarea.value);
+        visual.innerHTML = renderMarkdown(textarea.value);
         rewrapImages();
         visual.style.display = 'block';
         textarea.style.display = 'none';
@@ -2218,18 +2484,18 @@ function setMode(mode) {
 }
 
 function execCmd(cmd, val = null) {
-    if (isReadOnly) return;
+    if (!nyraCanEdit || isReadOnly) return;
     if (currentMode === 'visual') { document.execCommand(cmd, false, val); autoSave(); }
 }
 
 function addLink() {
-    if (isReadOnly || currentMode !== 'visual') return;
+    if (!nyraCanEdit || isReadOnly || currentMode !== 'visual') return;
     const url = prompt('Inserisci URL:');
     if (url) execCmd('createLink', url);
 }
 
 function insertBlockquote() {
-    if (isReadOnly || currentMode !== 'visual') return;
+    if (!nyraCanEdit || isReadOnly || currentMode !== 'visual') return;
     const visual = document.getElementById('visual-editor');
     visual.focus();
     const sel = window.getSelection();
@@ -2253,7 +2519,7 @@ function insertBlockquote() {
 }
 
 function insertCodeBlock() {
-    if (isReadOnly || currentMode !== 'visual') return;
+    if (!nyraCanEdit || isReadOnly || currentMode !== 'visual') return;
     const visual = document.getElementById('visual-editor');
     visual.focus();
     const sel = window.getSelection();
@@ -2285,7 +2551,7 @@ let pendingImageSrc = '';
 let savedSelectionRange = null;
 
 function openImageModal() {
-    if (isReadOnly || currentMode !== 'visual') return;
+    if (!nyraCanEdit || isReadOnly || currentMode !== 'visual') return;
     const sel = window.getSelection();
     if (sel && sel.rangeCount > 0) savedSelectionRange = sel.getRangeAt(0).cloneRange();
     document.getElementById('img-url-input').value = '';
@@ -2425,11 +2691,13 @@ function createImageWrapper(src, width) {
     wrapper.appendChild(img);
     wrapper.appendChild(handle);
     wrapper.addEventListener('click', (e) => {
+        if (!nyraCanEdit || isReadOnly) return;
         e.stopPropagation();
         deselectAllImages();
         wrapper.classList.add('selected');
     });
     handle.addEventListener('mousedown', (e) => {
+        if (!nyraCanEdit || isReadOnly) return;
         e.preventDefault();
         e.stopPropagation();
         resizingImg = img;
@@ -2440,6 +2708,7 @@ function createImageWrapper(src, width) {
 }
 
 function imgAlign(btn, dir) {
+    if (!nyraCanEdit || isReadOnly) return;
     const wrapper = btn.closest('.doc-image-wrapper');
     wrapper.classList.remove('align-left', 'align-center', 'align-right');
     wrapper.classList.add('align-' + dir);
@@ -2448,7 +2717,11 @@ function imgAlign(btn, dir) {
     autoSave();
 }
 
-function imgRemove(btn) { btn.closest('.doc-image-wrapper').remove(); autoSave(); }
+function imgRemove(btn) {
+    if (!nyraCanEdit || isReadOnly) return;
+    btn.closest('.doc-image-wrapper').remove();
+    autoSave();
+}
 
 function deselectAllImages() {
     document.querySelectorAll('.doc-image-wrapper.selected').forEach(w => w.classList.remove('selected'));
@@ -2466,7 +2739,7 @@ document.addEventListener('mouseup', () => { if (resizingImg) { resizingImg = nu
 
 // ── AUTOSAVE ──
 function autoSave() {
-    if (isReadOnly) return;
+    if (!nyraCanEdit || isReadOnly) return;
     showSaveStatus('saving');
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
@@ -2481,7 +2754,10 @@ function autoSave() {
             fontSize: visualDiv.style.fontSize || "16px",
             fontFamily: visualDiv.style.fontFamily || "Poppins",
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(() => showSaveStatus('saved'));
+        }).then(() => showSaveStatus('saved')).catch(error => {
+            console.error('Errore durante il salvataggio del documento:', error);
+            showSaveStatus('error');
+        });
     }, 1000);
 }
 
@@ -2623,7 +2899,10 @@ function renderFileList() {
 
     if (docs.length === 0) {
         groupLabel.style.display = 'none';
-        container.innerHTML = `<div class="filelist-empty"><i class="fas fa-file-alt"></i><p>Nessun documento trovato.</p></div>`;
+        const isFirstDocument = allDocsCache.length === 0 && !searchQuery && (sidebarFilter === 'recenti' || sidebarFilter === 'docs');
+        container.innerHTML = isFirstDocument
+            ? `<div class="filelist-empty first-document"><div class="empty-state-icon"><i class="fas fa-file-lines"></i></div><h3>Crea il tuo primo documento</h3><p>Appunti, progetti e idee: tutto quello che scrivi, in un unico posto.</p><button class="empty-create-doc" onclick="createNewDoc()"><i class="fas fa-plus"></i> Nuovo documento</button></div>`
+            : `<div class="filelist-empty"><div class="empty-state-icon"><i class="fas fa-magnifying-glass"></i></div><h3>Nessun documento trovato</h3><p>Prova con un altro termine o seleziona una cartella diversa.</p></div>`;
         return;
     }
 
@@ -2724,10 +3003,12 @@ function rewrapImages() {
 
 function openDoc(id, data) {
     currentDocId = id;
+    nyraDocumentSessionId = `document:${id}`;
     nyraHistory = [];
     isReadOnly = false;
     const role = data.collaborators[auth.currentUser.uid];
     const canEdit = role === 'Proprietario' || role === 'Editor';
+    nyraCanEdit = canEdit;
     const visual = document.getElementById('visual-editor');
     visual.contentEditable = canEdit;
     document.getElementById('doc-title-input').disabled = !canEdit;
@@ -2744,11 +3025,14 @@ function openDoc(id, data) {
     visual.style.fontFamily = data.fontFamily || "Poppins";
     document.getElementById('font-size').value = parseInt(data.fontSize) || 16;
     document.getElementById('font-family').value = data.fontFamily || "Poppins";
-    visual.innerHTML = marked.parse(data.content || "");
+    visual.innerHTML = renderMarkdown(data.content || "");
     rewrapImages();
     setMode('visual');
+    nyraResetRequestContext(id, canEdit);
     // Show toolbar
     document.getElementById('main-toolbar').style.display = 'flex';
+    if (canEdit) enableToolbarForEdit();
+    else disableToolbarForReadOnly();
     // First-time editor tutorial
     setTimeout(() => showTutorial('editor'), 600);
     // Reset Nyra quick buttons (in case previously opened a sealed doc)
@@ -3318,8 +3602,10 @@ function openAdxDocument(payload) {
 
     // Set state
     currentDocId = null;
+    nyraDocumentSessionId = `adx:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
     nyraHistory = [];
     isReadOnly = isSealed;
+    nyraCanEdit = !isSealed;
 
     const visual = document.getElementById('visual-editor');
     // Completely block contenteditable for sealed files
@@ -3363,11 +3649,12 @@ function openAdxDocument(payload) {
     document.getElementById('font-size').value = parseInt(fontSize) || 16;
     document.getElementById('font-family').value = fontFamily;
     document.getElementById('editor-textarea').value = md;
-    visual.innerHTML = marked.parse(md);
+    visual.innerHTML = renderMarkdown(md);
     rewrapImages();
 
     // Both adxe and adxs open in Visual mode by default
     setMode('visual');
+    nyraResetRequestContext(null, !isSealed);
 
     // For sealed docs: grey out editing quick-action buttons in Nyra
     const editActionKeys = ['migliora','espandi','formale','informale','correggi','traduci-en','continua'];
@@ -3562,6 +3849,30 @@ function toggleNyraPanel() {
     if (nyraIsOpen) setTimeout(() => showTutorial('nyra'), 400);
 }
 
+function nyraResetRequestContext(docId, canEdit) {
+    if (nyraActiveRequest) {
+        nyraActiveRequest.invalidated = true;
+        nyraAbortController?.abort();
+    }
+    nyraSelectedText = '';
+    nyraSelectedDocumentId = docId;
+    nyraPendingProposal = null;
+    nyraCanEdit = canEdit;
+    document.getElementById('nyra-context-preview').value = '';
+    document.getElementById('nyra-context-preview').dataset.contextMode = '';
+    document.getElementById('nyra-context-preview').dataset.sourceValue = '';
+    document.getElementById('nyra-context-preview').dataset.touched = '';
+    document.getElementById('nyra-context-mode').value = 'document';
+    const editOption = document.querySelector('#nyra-intent-mode option[value="edit"]');
+    editOption.disabled = !canEdit;
+    document.getElementById('nyra-intent-mode').value = 'answer';
+    if (!canEdit) document.querySelectorAll('.nyra-quick-btn').forEach(button => {
+        if (!button.getAttribute('onclick')?.includes("nyraQuickAction('riassumi')")) button.disabled = true;
+    });
+    else document.querySelectorAll('.nyra-quick-btn').forEach(button => { button.disabled = false; });
+    nyraUpdateContextBadge();
+}
+
 function nyraAutoResize(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 100) + 'px';
@@ -3576,10 +3887,29 @@ function getDocumentText() {
     return turndownService.turndown(visual.innerHTML).trim();
 }
 
-function getSelectedText() {
+function getSelectedText(refresh = false) {
+    if (currentMode === 'literal') {
+        const textarea = document.getElementById('editor-textarea');
+        if (textarea.selectionStart !== textarea.selectionEnd) {
+            nyraSelectedText = textarea.value.slice(textarea.selectionStart, textarea.selectionEnd).trim();
+            nyraSelectedDocumentId = currentDocId;
+            return nyraSelectedText || null;
+        }
+    }
     const selection = window.getSelection();
-    if (selection && selection.toString().trim().length > 0) return selection.toString().trim();
-    return null;
+    const visual = document.getElementById('visual-editor');
+    if (selection && !selection.isCollapsed && selection.rangeCount && visual.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+        const fragment = document.createElement('div');
+        fragment.appendChild(selection.getRangeAt(0).cloneContents());
+        nyraSelectedText = turndownService.turndown(fragment.innerHTML).trim();
+        nyraSelectedDocumentId = currentDocId;
+        return nyraSelectedText || null;
+    }
+    if (refresh) {
+        nyraSelectedText = '';
+        nyraSelectedDocumentId = currentDocId;
+    }
+    return nyraSelectedDocumentId === currentDocId && nyraSelectedText ? nyraSelectedText : null;
 }
 
 // Apply Nyra's markdown output to the document:
@@ -3587,16 +3917,19 @@ function getSelectedText() {
 // 2. Switch to literal (markdown) mode so content is visible as markdown
 // 3. Sync visual mode as well
 function applyTextToDoc(newText) {
-    if (isReadOnly) return;
+    if (!nyraCanEdit || isReadOnly) return;
     const visual = document.getElementById('visual-editor');
     const textarea = document.getElementById('editor-textarea');
-    // Store markdown in textarea
     textarea.value = newText;
-    // Update visual editor from markdown
-    visual.innerHTML = marked.parse(newText);
+    visual.innerHTML = renderMarkdown(newText);
     rewrapImages();
-    // Switch to literal (Letterale) mode to show the raw markdown
-    setMode('literal');
+    currentMode = 'literal';
+    ['btn-visual', 'btn-literal', 'btn-visual-m', 'btn-literal-m'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) button.classList.toggle('active', id.includes('literal'));
+    });
+    visual.style.display = 'none';
+    textarea.style.display = 'block';
     autoSave();
     autoResizeTextarea(textarea);
 }
@@ -3606,7 +3939,7 @@ function autoResizeTextarea(el) {
     el.style.height = el.scrollHeight + 'px';
 }
 
-function nyraAppendMessage(role, html, withApply = false, applyText = '') {
+function nyraAppendMessage(role, html, actions = {}) {
     const container = document.getElementById('nyra-chat-messages');
     const block = document.createElement('div');
     block.className = `nyra-msg-block ${role}`;
@@ -3616,20 +3949,29 @@ function nyraAppendMessage(role, html, withApply = false, applyText = '') {
     block.appendChild(label);
     const bubble = document.createElement('div');
     bubble.className = `nyra-msg ${role}`;
-    if (role === 'bot') { try { bubble.innerHTML = marked.parse(html); } catch(e) { bubble.textContent = html; } }
+    if (role === 'bot') { try { bubble.innerHTML = renderMarkdown(html); } catch(e) { bubble.textContent = html; } }
     else { bubble.textContent = html; }
-    if (withApply && applyText) {
-        const applyBtn = document.createElement('button');
-        applyBtn.className = 'nyra-apply-btn';
-        applyBtn.innerHTML = '<i class="fas fa-check"></i> Applica al documento';
-        applyBtn.onclick = () => {
-            applyTextToDoc(applyText);
-            applyBtn.innerHTML = '<i class="fas fa-check-double"></i> Applicato! (modalità Letterale)';
-            applyBtn.disabled = true;
-            applyBtn.style.opacity = '0.6';
-        };
-        bubble.appendChild(document.createElement('br'));
-        bubble.appendChild(applyBtn);
+    if (actions.proposal) {
+        const previewBtn = document.createElement('button');
+        previewBtn.className = 'nyra-preview-btn';
+        previewBtn.innerHTML = '<i class="fas fa-code-compare" aria-hidden="true"></i> Anteprima modifiche';
+        previewBtn.onclick = () => openNyraPreview(actions.proposal);
+        bubble.appendChild(previewBtn);
+    }
+    if (actions.retry) {
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'nyra-retry-btn';
+        retryBtn.innerHTML = '<i class="fas fa-rotate-right" aria-hidden="true"></i> Riprova';
+        retryBtn.onclick = () => nyraRetryLastRequest();
+        bubble.appendChild(retryBtn);
+    }
+    if (actions.restorePointId) {
+        const restoreBtn = document.createElement('button');
+        restoreBtn.className = 'nyra-restore-btn';
+        restoreBtn.innerHTML = '<i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Ripristina versione precedente';
+        restoreBtn.title = 'Punto di ripristino disponibile solo per questa sessione';
+        restoreBtn.onclick = () => restoreNyraPoint(actions.restorePointId);
+        bubble.appendChild(restoreBtn);
     }
     block.appendChild(bubble);
     container.appendChild(block);
@@ -3662,26 +4004,55 @@ function nyraHideTyping() {
 function nyraUpdateContextBadge() {
     const indicator = document.getElementById('nyra-context-indicator');
     const selected = getSelectedText();
+    const selectionOption = document.querySelector('#nyra-context-mode option[value="selection"]');
+    selectionOption.disabled = !selected;
+    if (!selected && document.getElementById('nyra-context-mode').value === 'selection') {
+        document.getElementById('nyra-context-mode').value = 'document';
+    }
     if (selected) {
         indicator.style.display = 'flex';
-        indicator.innerHTML = `<div class="nyra-context-badge"><i class="fas fa-text-slash"></i> Testo selezionato (${selected.length} car.)</div>`;
+        indicator.textContent = `Selezione disponibile (${selected.length} caratteri)`;
+        indicator.className = 'nyra-context-badge';
     } else { indicator.style.display = 'none'; }
+    nyraUpdateContextSummary();
 }
 
-document.getElementById('visual-editor').addEventListener('mouseup', nyraUpdateContextBadge);
-document.getElementById('editor-textarea').addEventListener('mouseup', nyraUpdateContextBadge);
+document.getElementById('nyra-intent-mode').addEventListener('change', event => {
+    if (event.target.value === 'edit' && !nyraCanEdit) {
+        event.target.value = 'answer';
+        showToast('Questo documento è in sola lettura.');
+    }
+});
 
-// Quick action prompts — always ask Nyra to return valid Markdown
-// so that applyTextToDoc() can directly use the output in literal mode.
+function nyraCaptureEditorSelection() {
+    getSelectedText(true);
+    nyraUpdateContextBadge();
+}
+
+document.getElementById('visual-editor').addEventListener('mouseup', nyraCaptureEditorSelection);
+document.getElementById('visual-editor').addEventListener('keyup', nyraCaptureEditorSelection);
+document.getElementById('visual-editor').addEventListener('input', nyraCaptureEditorSelection);
+document.getElementById('editor-textarea').addEventListener('mouseup', nyraCaptureEditorSelection);
+document.getElementById('editor-textarea').addEventListener('keyup', nyraCaptureEditorSelection);
+document.getElementById('editor-textarea').addEventListener('select', nyraCaptureEditorSelection);
+document.getElementById('editor-textarea').addEventListener('input', nyraCaptureEditorSelection);
+document.getElementById('nyra-context-mode').addEventListener('change', () => {
+    nyraUpdateContextSummary(true);
+});
+document.getElementById('nyra-context-preview').addEventListener('input', () => {
+    document.getElementById('nyra-context-preview').dataset.touched = 'true';
+    nyraUpdateContextSummary();
+});
+
 const QUICK_PROMPTS = {
-    'migliora':   (t) => `Sei un editor di testi. Migliora la qualità e la leggibilità del seguente testo Markdown, mantenendo il significato originale e tutta la formattazione Markdown (titoli, liste, grassetto, corsivo, ecc.). Restituisci SOLO il testo Markdown migliorato, senza preamboli, spiegazioni, backtick aggiuntivi o delimitatori di blocco:\n\n${t}`,
-    'riassumi':   (t) => `Sei un editor di testi. Riassumi il seguente testo Markdown in modo conciso, conservando la struttura Markdown appropriata (titoli, liste). Restituisci SOLO il Markdown del riassunto, senza preamboli o spiegazioni:\n\n${t}`,
-    'espandi':    (t) => `Sei un editor di testi. Espandi e arricchisci il seguente testo Markdown aggiungendo dettagli, esempi e contenuto pertinente, mantenendo tutta la formattazione Markdown esistente e aggiungendone dove utile. Restituisci SOLO il Markdown espanso, senza preamboli o spiegazioni:\n\n${t}`,
-    'formale':    (t) => `Sei un editor di testi. Riscrivi il seguente testo Markdown con un tono professionale e formale, mantenendo tutta la formattazione Markdown. Restituisci SOLO il Markdown riscritto, senza preamboli o spiegazioni:\n\n${t}`,
-    'informale':  (t) => `Sei un editor di testi. Riscrivi il seguente testo Markdown con un tono informale, amichevole e naturale, mantenendo tutta la formattazione Markdown. Restituisci SOLO il Markdown riscritto, senza preamboli o spiegazioni:\n\n${t}`,
-    'correggi':   (t) => `Sei un editor di testi. Correggi tutti gli errori grammaticali, ortografici e di punteggiatura nel seguente testo Markdown, mantenendo tutta la formattazione Markdown intatta. Restituisci SOLO il Markdown corretto, senza preamboli o spiegazioni:\n\n${t}`,
-    'traduci-en': (t) => `Sei un traduttore. Traduci il seguente testo Markdown in inglese, mantenendo tutta la formattazione Markdown (titoli, liste, grassetto, corsivo). Restituisci SOLO il Markdown tradotto, senza preamboli o spiegazioni:\n\n${t}`,
-    'continua':   (t) => `Sei uno scrittore. Continua il seguente testo Markdown in modo coerente e naturale, mantenendo lo stile dell'autore e usando formattazione Markdown appropriata. Restituisci SOLO la continuazione in Markdown (non ripetere il testo originale), senza preamboli o spiegazioni:\n\n${t}`,
+    'migliora': 'Migliora chiarezza, qualità e leggibilità del testo fornito, preservandone significato e formattazione.',
+    'riassumi': 'Riassumi in modo conciso il testo fornito, mantenendo le informazioni principali.',
+    'espandi': 'Espandi il testo fornito con dettagli ed esempi pertinenti, mantenendo tono e struttura.',
+    'formale': 'Riscrivi il testo fornito con tono professionale e formale.',
+    'informale': 'Riscrivi il testo fornito con tono informale, amichevole e naturale.',
+    'correggi': 'Correggi grammatica, ortografia e punteggiatura senza cambiare il significato.',
+    'traduci-en': 'Traduci in inglese il testo fornito, mantenendo struttura e formattazione.',
+    'continua': 'Continua il testo fornito in modo coerente, senza ripetere il testo originale.',
 };
 const QUICK_LABELS = {
     'migliora': '✨ Migliora testo', 'riassumi': '📝 Riassumi', 'espandi': '📖 Espandi',
@@ -3689,24 +4060,89 @@ const QUICK_LABELS = {
     'traduci-en': '🌐 Traduci in inglese', 'continua': '✍️ Continua testo',
 };
 
+function nyraUpdateContextSummary(forceRefresh = false) {
+    const mode = document.getElementById('nyra-context-mode').value;
+    const summary = document.getElementById('nyra-context-summary');
+    const preview = document.getElementById('nyra-context-preview');
+    const selected = getSelectedText();
+    if (mode === 'none') {
+        summary.textContent = 'Non verrà allegato testo del documento.';
+        preview.style.display = 'none';
+        preview.value = '';
+        preview.dataset.contextMode = mode;
+        preview.dataset.sourceValue = '';
+        preview.dataset.touched = '';
+    } else if (mode === 'selection') {
+        if (forceRefresh || preview.dataset.contextMode !== mode || preview.dataset.sourceValue !== selected) {
+            preview.value = selected || '';
+            preview.dataset.contextMode = mode;
+            preview.dataset.sourceValue = selected || '';
+            preview.dataset.touched = '';
+        }
+        summary.textContent = selected
+            ? `Controlla o modifica il testo selezionato prima di inviarlo (${preview.value.length.toLocaleString('it-IT')} caratteri).`
+            : 'Seleziona prima un passaggio nel documento.';
+        preview.style.display = selected ? 'block' : 'none';
+    }
+    else {
+        const source = getDocumentText();
+        if (forceRefresh || preview.dataset.contextMode !== mode || (preview.dataset.sourceValue !== source && preview.dataset.touched !== 'true')) {
+            preview.value = source;
+            preview.dataset.contextMode = mode;
+            preview.dataset.sourceValue = source;
+            preview.dataset.touched = '';
+        }
+        const length = preview.value.length;
+        summary.textContent = length
+            ? `Controlla o modifica il testo completo prima di inviarlo (${length.toLocaleString('it-IT')} caratteri).`
+            : 'Il documento è vuoto.';
+        preview.style.display = length ? 'block' : 'none';
+    }
+}
+
+function nyraBuildRequest(message, intent, contextMode) {
+    const originalDoc = getDocumentText();
+    const selected = getSelectedText() || '';
+    const contextText = contextMode === 'document' || contextMode === 'selection'
+        ? document.getElementById('nyra-context-preview').value
+        : '';
+    const contextLabel = contextMode === 'selection' ? 'selezione corrente'
+        : contextMode === 'document' ? 'documento completo'
+        : 'nessun contesto';
+    const requestMessage = contextText
+        ? `${message}\n\nContesto scelto dall’utente (${contextLabel}, Markdown):\n---\n${contextText}\n---`
+        : message;
+    return {
+        message: requestMessage,
+        displayText: message,
+        intent,
+        contextMode,
+        contextText,
+        sourceSelection: contextMode === 'selection' ? selected : '',
+        originalDoc,
+        docId: currentDocId,
+        documentSessionId: nyraDocumentSessionId,
+    };
+}
+
 async function nyraQuickAction(action) {
     // For sealed docs: only allow 'riassumi', block everything that modifies
     const editActions = ['migliora','espandi','formale','informale','correggi','traduci-en','continua'];
-    if (isReadOnly && editActions.includes(action)) {
+    if (!nyraCanEdit && editActions.includes(action)) {
         nyraAppendMessage('bot', '🔒 Questo documento è sigillato (.adxs) — non posso modificarne il contenuto. Posso solo riassumerlo o rispondere a domande su di esso.');
         return;
     }
     if (!nyraIsOpen) toggleNyraPanel();
-    const selected = getSelectedText();
-    const docText = getDocumentText();
-    const targetText = selected || docText;
-    if (!targetText) { nyraAppendMessage('bot', '⚠️ Il documento è vuoto. Scrivi qualcosa prima di usare le azioni rapide.'); return; }
-    const label = QUICK_LABELS[action] || action;
-    const contextNote = selected ? '*(testo selezionato)*' : '*(intero documento)*';
-    nyraAppendMessage('user', `${label} ${contextNote}`);
-    // For sealed: riassumi should NOT offer apply button
-    const canApply = !isReadOnly;
-    await nyraCallAPI(QUICK_PROMPTS[action](targetText), canApply);
+    const intent = action === 'riassumi' ? 'answer' : 'edit';
+    const contextMode = document.getElementById('nyra-context-mode');
+    if (contextMode.value === 'none') contextMode.value = 'document';
+    if (contextMode.value === 'selection' && !getSelectedText()) contextMode.value = 'document';
+    document.getElementById('nyra-intent-mode').value = intent;
+    nyraUpdateContextSummary();
+    const request = nyraBuildRequest(QUICK_PROMPTS[action], intent, contextMode.value);
+    if (!request.contextText) { nyraAppendMessage('bot', 'Il documento è vuoto: aggiungi testo prima di usare questa azione.'); return; }
+    request.displayText = QUICK_LABELS[action] || action;
+    await nyraCallAPI(request);
 }
 
 async function nyraSend() {
@@ -3714,61 +4150,409 @@ async function nyraSend() {
     const input = document.getElementById('nyra-input');
     const text = input.value.trim();
     if (!text) return;
-    input.value = '';
-    input.style.height = 'auto';
-    nyraAppendMessage('user', text);
-    const docText = getDocumentText();
-    const selected = getSelectedText();
-    let messageWithContext = text;
-    const needsContext = /\b(testo|documento|scritto|contenuto|paragrafo|frase|parole|articolo)\b/i.test(text);
-    if (needsContext && docText) {
-        const contextSnippet = selected || (docText.length > 1200 ? docText.substring(0, 1200) + '...' : docText);
-        messageWithContext = `${text}\n\nContesto del documento (in Markdown):\n---\n${contextSnippet}\n---`;
+    const intent = document.getElementById('nyra-intent-mode').value;
+    const contextMode = document.getElementById('nyra-context-mode').value;
+    if (intent === 'edit' && !nyraCanEdit) {
+        nyraAppendMessage('bot', 'Questo documento è sigillato e non può essere modificato. Puoi passare a “Risposta” per chiedere un’analisi.');
+        return;
     }
-    // For sealed docs: never offer the "apply" button
-    const isModRequest = !isReadOnly && /\b(modifica|riscrivi|cambia|sostituisci|aggiorna|migliora|correggi|traduci|espandi|riassumi|continua|aggiungi|rimuovi|togli)\b/i.test(text);
-    await nyraCallAPI(messageWithContext, isModRequest);
+    if (intent === 'edit' && contextMode === 'none') {
+        nyraAppendMessage('bot', 'Per preparare una modifica, scegli “Documento” o “Selezione corrente” come contesto.');
+        return;
+    }
+    const request = nyraBuildRequest(text, intent, contextMode);
+    if (contextMode === 'selection' && !request.contextText) {
+        nyraAppendMessage('bot', 'Seleziona prima il testo nel documento, poi scegli “Selezione corrente”.');
+        return;
+    }
+    request.displayText = text;
+    request.inputValue = text;
+    await nyraCallAPI(request);
 }
 
-async function nyraCallAPI(message, isDocAction = false) {
+function nyraBuildSystemPrompt(request) {
+    const modeInstruction = request.intent === 'edit'
+        ? (request.contextMode === 'selection'
+            ? 'Prepara una proposta modificando esclusivamente il passaggio fornito. Nel campo content restituisci solo il passaggio revisionato, senza il resto del documento.'
+            : 'Prepara una proposta per il documento completo. Nel campo content restituisci l’intero documento revisionato in Markdown, preservando le parti non interessate.')
+        : 'Rispondi alla domanda dell’utente senza proporre una sostituzione automatica del documento.';
+    return `Sei Nyra, assistente AI integrata in Aura Docs. L’intento richiesto è "${request.intent}" e il contesto è "${request.contextMode}". ${modeInstruction} Rispondi in italiano. Restituisci un singolo oggetto JSON valido, senza blocchi di codice, con questa struttura: {"type":"answer" oppure "edit","content":"risposta o Markdown proposto","summary":"breve riepilogo"}. Usa type=edit solo quando hai prodotto una proposta completa per lo scope richiesto; altrimenti usa type=answer. Non aggiungere testo fuori dal JSON.`;
+}
+
+function nyraParseStructuredReply(rawReply, expectedIntent) {
+    if (rawReply && typeof rawReply === 'object') {
+        const type = rawReply.type === 'edit' ? 'edit' : rawReply.type === 'answer' ? 'answer' : expectedIntent;
+        return { type, content: String(rawReply.content ?? rawReply.markdown ?? ''), summary: String(rawReply.summary ?? '') };
+    }
+    const text = String(rawReply || '').trim();
+    const jsonText = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+    try {
+        const parsed = JSON.parse(jsonText);
+        if (parsed && typeof parsed === 'object' && (parsed.content != null || parsed.markdown != null)) {
+            return {
+                type: parsed.type === 'edit' || parsed.intent === 'edit' ? 'edit' : parsed.type === 'answer' || parsed.intent === 'answer' ? 'answer' : expectedIntent,
+                content: String(parsed.content ?? parsed.markdown ?? ''),
+                summary: String(parsed.summary ?? ''),
+            };
+        }
+    } catch (error) {
+        // A plain-text response is accepted for compatibility with the current API.
+    }
+    return { type: expectedIntent, content: text.replace(/^```(?:markdown)?\n?/i, '').replace(/\n?```\s*$/i, '').trim(), summary: '' };
+}
+
+async function nyraReadApiResponse(response, onChunk) {
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) return response.json();
+    if (!response.body || !response.body.getReader) {
+        const text = await response.text();
+        try { return JSON.parse(text); } catch (error) { return { reply: text }; }
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const isEventStream = /text\/event-stream|application\/(?:x-)?ndjson/i.test(contentType);
+    let buffer = '';
+    let streamedText = '';
+    let responseData = {};
+    const consumeEvent = line => {
+        if (/^(event|id|retry):/.test(line) || line.startsWith(':')) return;
+        const eventData = line.startsWith('data:') ? line.slice(5).trimStart() : line.trim();
+        if (!eventData || eventData === '[DONE]') return;
+        try {
+            const event = JSON.parse(eventData);
+            if (event.error) throw new Error(event.error.message || event.error);
+            if (event.reply != null || event.updatedHistory) responseData = { ...responseData, ...event };
+            const delta = event.choices?.[0]?.delta?.content
+                ?? event.delta?.text
+                ?? event.delta
+                ?? event.token
+                ?? (event.type === 'response.output_text.delta' ? event.delta : undefined);
+            if (typeof delta === 'string') {
+                streamedText += delta;
+                onChunk(streamedText);
+            } else if (typeof event.content === 'string' && !event.reply) {
+                streamedText += event.content;
+                onChunk(streamedText);
+            }
+        } catch (error) {
+            if (error instanceof SyntaxError) {
+                streamedText += eventData;
+                onChunk(streamedText);
+            } else throw error;
+        }
+    };
+
+    while (true) {
+        const { value, done } = await reader.read();
+        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+        if (!isEventStream) {
+            streamedText = buffer;
+            onChunk(streamedText);
+        } else {
+            const lines = buffer.split(/\r?\n/);
+            buffer = lines.pop() || '';
+            lines.forEach(consumeEvent);
+            if (done && buffer) consumeEvent(buffer);
+        }
+        if (done) break;
+    }
+    if (responseData.reply != null) return { ...responseData, reply: responseData.reply };
+    try {
+        const parsed = JSON.parse(streamedText);
+        return { ...responseData, ...parsed };
+    } catch (error) {
+        return { ...responseData, reply: streamedText };
+    }
+}
+
+function nyraSetBusy(isBusy) {
+    nyraIsProcessing = isBusy;
+    document.getElementById('nyra-send-btn').disabled = isBusy;
+    document.getElementById('nyra-cancel-btn').style.display = isBusy ? 'inline-flex' : 'none';
+    document.querySelectorAll('.nyra-quick-btn').forEach(button => {
+        const isSummary = button.getAttribute('onclick')?.includes("nyraQuickAction('riassumi')");
+        button.disabled = isBusy || (!nyraCanEdit && !isSummary);
+    });
+}
+
+async function nyraCallAPI(request) {
     if (nyraIsProcessing) return;
-    nyraIsProcessing = true;
-    document.getElementById('nyra-send-btn').disabled = true;
+    if (request.docId !== currentDocId || request.documentSessionId !== nyraDocumentSessionId) {
+        nyraAppendMessage('bot', 'La richiesta appartiene a un documento diverso da quello aperto. Invia di nuovo la richiesta.');
+        return;
+    }
+    if (!request.userBubble) {
+        const contextLabel = request.contextMode === 'document' ? 'Contesto: documento completo' : request.contextMode === 'selection' ? 'Contesto: selezione corrente' : 'Senza contesto';
+        request.userBubble = nyraAppendMessage('user', `${request.displayText}\n${contextLabel}`);
+    }
+    nyraActiveRequest = request;
+    nyraSetBusy(true);
+    nyraAbortController = new AbortController();
     nyraShowTyping();
+    let streamedBubble = null;
     try {
         const payload = {
-            message, history: nyraHistory, model: 'openai/gpt-5-nano', temperature: 0.7,
+            message: request.message,
+            context: { mode: request.contextMode, text: request.contextText },
+            history: nyraHistory,
+            model: 'openai/gpt-5-nano',
+            temperature: 0.7,
+            intent: request.intent,
+            contextMode: request.contextMode,
+            responseFormat: 'nyra-v1-json',
+            stream: true,
             systemPrompt: isReadOnly
-                ? 'Sei Nyra, assistente AI integrata in Aura Docs. Questo documento è SIGILLATO (.adxs) e non può essere modificato in alcun modo. Puoi solo rispondere a domande su di esso, riassumerlo, spiegarlo o analizzarlo — senza mai proporre modifiche, riscritture o testi alternativi da applicare. Rispondi in italiano in modo conciso e utile.'
-                : (isDocAction
-                    ? 'Sei Nyra, assistente AI integrata in Aura Docs. Quando ti vengono chieste modifiche al testo, restituisci SOLO il testo modificato in formato Markdown valido, senza preamboli, spiegazioni, commenti, blocchi di codice avvolgenti (triple backtick) o altro testo aggiuntivo. Il tuo output sarà inserito direttamente come sorgente Markdown del documento. Per le domande generali, rispondi normalmente in italiano.'
-                    : 'Sei Nyra, assistente AI integrata in Aura Docs. Aiuta l\'utente con il suo documento. Il documento usa la sintassi Markdown internamente. Rispondi in italiano in modo conciso e utile.'),
+                ? 'Sei Nyra, assistente AI integrata in Aura Docs. Questo documento è sigillato e non può essere modificato. Rispondi solo a domande, analisi e riassunti. Restituisci un singolo JSON valido con type=answer, content e summary, senza testo esterno.'
+                : nyraBuildSystemPrompt(request),
         };
-        const response = await fetch('https://api.nyra.aurastudioitalia.it/nyra', {
+        const response = await fetch('https://api-nyra-temp-cloudflare.aurastudio-italia.workers.dev/nyra', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
+            signal: nyraAbortController.signal,
         });
-        if (!response.ok) { const err = await response.json().catch(() => ({})); throw new Error(err.error || `Errore ${response.status}`); }
-        const data = await response.json();
-        const reply = data.reply || '';
-        if (!reply) throw new Error('Risposta vuota dal server.');
-        // Strip accidental wrapping triple-backtick markdown fences from doc-action responses
-        let cleanReply = reply;
-        if (isDocAction) {
-            cleanReply = reply.replace(/^```(?:markdown)?\n?/i, '').replace(/\n?```\s*$/i, '').trim();
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Errore ${response.status}`);
         }
-        if (Array.isArray(data.updatedHistory)) { nyraHistory = data.updatedHistory; }
-        else { nyraHistory.push({ role: 'user', content: message }); nyraHistory.push({ role: 'assistant', content: reply }); }
+        const data = await nyraReadApiResponse(response, partial => {
+            if (!streamedBubble) {
+                nyraHideTyping();
+                streamedBubble = nyraAppendMessage('bot', '');
+            }
+            streamedBubble.textContent = partial;
+        });
+        if (request.invalidated || request.documentSessionId !== nyraDocumentSessionId) return;
+        const rawReply = data.reply ?? data.result ?? data.content ?? '';
+        if (!rawReply) throw new Error('Risposta vuota dal server.');
+        const result = nyraParseStructuredReply(rawReply, request.intent);
+        if (!result.content) throw new Error('La risposta di Nyra non contiene testo.');
+        if (Array.isArray(data.updatedHistory)) nyraHistory = data.updatedHistory;
+        else {
+            nyraHistory.push({ role: 'user', content: request.message });
+            nyraHistory.push({ role: 'assistant', content: typeof rawReply === 'string' ? rawReply : JSON.stringify(rawReply) });
+        }
+
         nyraHideTyping();
-        nyraAppendMessage('bot', cleanReply, isDocAction, cleanReply);
-    } catch (err) {
+        const canPreviewEdit = request.intent === 'edit' && result.type === 'edit' && !isReadOnly;
+        const messageText = canPreviewEdit
+            ? result.summary || 'Proposta pronta. Apri l’anteprima per selezionare le modifiche da applicare.'
+            : result.content;
+        const actions = canPreviewEdit ? { proposal: {
+            docId: request.docId,
+            documentSessionId: request.documentSessionId,
+            contextMode: request.contextMode,
+            contextText: request.contextText,
+            sourceSelection: request.sourceSelection,
+            originalDoc: request.originalDoc,
+            proposedText: result.content,
+            summary: result.summary,
+        } } : {};
+        if (streamedBubble) streamedBubble.parentElement.remove();
+        const finalBubble = nyraAppendMessage('bot', messageText, actions);
+        if (actions.proposal) actions.proposal.bubble = finalBubble;
+        nyraLastFailedRequest = null;
+        const input = document.getElementById('nyra-input');
+        if (request.inputValue && input.value.trim() === request.inputValue) {
+            input.value = '';
+            input.style.height = 'auto';
+        }
+    } catch (error) {
         nyraHideTyping();
-        nyraAppendMessage('bot', `⚠️ ${err.message || 'Errore di connessione. Riprova.'}`);
+        if (streamedBubble) streamedBubble.parentElement.remove();
+        if (request.invalidated) return;
+        const aborted = error.name === 'AbortError';
+        const message = aborted
+            ? 'Richiesta interrotta. Il testo è rimasto disponibile; puoi riprovare.'
+            : `Nyra non ha completato la richiesta: ${error.message || 'errore di connessione'}`;
+        nyraLastFailedRequest = request;
+        nyraAppendMessage('bot', message, { retry: true });
     } finally {
-        nyraIsProcessing = false;
-        document.getElementById('nyra-send-btn').disabled = false;
+        nyraHideTyping();
+        nyraSetBusy(false);
+        nyraAbortController = null;
+        if (nyraActiveRequest === request) nyraActiveRequest = null;
     }
+}
+
+function nyraCancelRequest() {
+    if (nyraAbortController) nyraAbortController.abort();
+}
+
+function nyraRetryLastRequest() {
+    if (nyraLastFailedRequest && !nyraIsProcessing) return nyraCallAPI(nyraLastFailedRequest);
+    return Promise.resolve();
+}
+
+function nyraBuildDiffUnits(original, proposed) {
+    const parts = window.Diff
+        ? Diff.diffLines(original, proposed)
+        : [{ value: original, removed: true }, { value: proposed, added: true }];
+    const units = [];
+    parts.forEach(part => {
+        if (!part.added && !part.removed) {
+            units.push({ type: 'equal', value: part.value });
+            return;
+        }
+        let change = units[units.length - 1];
+        if (!change || change.type !== 'change') {
+            change = { type: 'change', before: '', after: '' };
+            units.push(change);
+        }
+        change[part.added ? 'after' : 'before'] += part.value;
+    });
+    return units;
+}
+
+function openNyraPreview(proposal) {
+    if (proposal.docId !== currentDocId || proposal.documentSessionId !== nyraDocumentSessionId) {
+        showToast('Questa proposta appartiene a un altro documento.');
+        return;
+    }
+    if (!nyraCanEdit || isReadOnly) {
+        showToast('Non hai i permessi per applicare modifiche a questo documento.');
+        return;
+    }
+    if (getDocumentText() !== proposal.originalDoc) {
+        showToast('Il documento è cambiato dopo la richiesta. Rigenera la proposta per confrontarla con la versione attuale.');
+        return;
+    }
+
+    let proposedDocument = proposal.proposedText;
+    if (proposal.contextMode === 'selection') {
+        const needle = proposal.sourceSelection.trim();
+        const start = proposal.originalDoc.indexOf(needle);
+        if (!needle || start < 0 || start !== proposal.originalDoc.lastIndexOf(needle)) {
+            showToast('Non riesco a individuare in modo univoco la selezione nel Markdown. Scegli il documento intero come contesto.');
+            return;
+        }
+        proposedDocument = proposal.originalDoc.slice(0, start) + proposal.proposedText + proposal.originalDoc.slice(start + needle.length);
+    }
+
+    const units = nyraBuildDiffUnits(proposal.originalDoc, proposedDocument);
+    const list = document.getElementById('nyra-diff-list');
+    list.replaceChildren();
+    let changeNumber = 0;
+    units.forEach((unit, unitIndex) => {
+        if (unit.type === 'equal') return;
+        const card = document.createElement('section');
+        card.className = 'nyra-diff-change';
+        card.dataset.unitIndex = unitIndex;
+        const label = document.createElement('label');
+        label.className = 'nyra-diff-toggle';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        checkbox.setAttribute('aria-label', `Applica modifica ${changeNumber + 1}`);
+        const labelText = document.createElement('span');
+        labelText.textContent = `Applica modifica ${++changeNumber}`;
+        label.append(checkbox, labelText);
+        const sides = document.createElement('div');
+        sides.className = 'nyra-diff-sides';
+        const oldSide = document.createElement('pre');
+        oldSide.className = 'nyra-diff-side old';
+        oldSide.textContent = unit.before || '(nessun testo)';
+        const newSide = document.createElement('pre');
+        newSide.className = 'nyra-diff-side new';
+        newSide.textContent = unit.after || '(nessun testo)';
+        sides.append(oldSide, newSide);
+        card.append(label, sides);
+        list.appendChild(card);
+    });
+    if (!changeNumber) {
+        const empty = document.createElement('p');
+        empty.textContent = 'La proposta non introduce differenze rispetto al documento.';
+        empty.style.cssText = 'padding:24px 12px;text-align:center;color:var(--text-secondary);font-size:13px;';
+        list.appendChild(empty);
+    }
+
+    nyraPendingProposal = { ...proposal, proposedDocument, units };
+    const applyButton = document.getElementById('nyra-preview-apply');
+    applyButton.disabled = changeNumber === 0;
+    nyraPreviewReturnFocus = document.activeElement;
+    document.getElementById('nyra-preview-modal').style.display = 'flex';
+    document.querySelector('.nyra-preview-close').focus();
+}
+
+function closeNyraPreview() {
+    document.getElementById('nyra-preview-modal').style.display = 'none';
+    nyraPendingProposal = null;
+    if (nyraPreviewReturnFocus?.isConnected) nyraPreviewReturnFocus.focus();
+    nyraPreviewReturnFocus = null;
+}
+
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && document.getElementById('nyra-preview-modal').style.display === 'flex') closeNyraPreview();
+});
+
+function applySelectedNyraChanges() {
+    const proposal = nyraPendingProposal;
+    if (!proposal || proposal.docId !== currentDocId || proposal.documentSessionId !== nyraDocumentSessionId) return;
+    if (!nyraCanEdit || isReadOnly) {
+        closeNyraPreview();
+        showToast('Non hai i permessi per applicare modifiche a questo documento.');
+        return;
+    }
+    const currentDocument = getDocumentText();
+    if (currentDocument !== proposal.originalDoc) {
+        closeNyraPreview();
+        showToast('Il documento è cambiato: la proposta non è stata applicata.');
+        return;
+    }
+    let nextDocument = '';
+    proposal.units.forEach((unit, unitIndex) => {
+        if (unit.type === 'equal') {
+            nextDocument += unit.value;
+            return;
+        }
+        const checkbox = document.querySelector(`#nyra-diff-list [data-unit-index="${unitIndex}"] input[type="checkbox"]`);
+        nextDocument += checkbox?.checked ? unit.after : unit.before;
+    });
+    if (nextDocument === currentDocument) {
+        showToast('Seleziona almeno una modifica da applicare.');
+        return;
+    }
+
+    const restorePoint = {
+        id: `nyra-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        docId: currentDocId,
+        documentSessionId: nyraDocumentSessionId,
+        before: currentDocument,
+        after: nextDocument,
+        createdAt: new Date(),
+    };
+    nyraRestorePoints.push(restorePoint);
+    applyTextToDoc(nextDocument);
+
+    const restoreButton = document.createElement('button');
+    restoreButton.className = 'nyra-restore-btn';
+    restoreButton.innerHTML = '<i class="fas fa-clock-rotate-left" aria-hidden="true"></i> Ripristina versione precedente';
+    restoreButton.title = 'Punto di ripristino disponibile solo per questa sessione';
+    restoreButton.onclick = () => restoreNyraPoint(restorePoint.id);
+    proposal.bubble?.appendChild(document.createElement('br'));
+    proposal.bubble?.appendChild(restoreButton);
+    closeNyraPreview();
+    showToast('Modifica applicata. Punto di ripristino creato per questa sessione.');
+}
+
+function restoreNyraPoint(restorePointId) {
+    const point = nyraRestorePoints.find(item => item.id === restorePointId);
+    if (!point || point.docId !== currentDocId || point.documentSessionId !== nyraDocumentSessionId) {
+        showToast('Questo punto di ripristino non è disponibile per il documento aperto.');
+        return;
+    }
+    if (!nyraCanEdit || isReadOnly) {
+        showToast('Non hai i permessi per ripristinare questo documento.');
+        return;
+    }
+    if (getDocumentText() === point.before) {
+        showToast('Il documento è già alla versione precedente.');
+        return;
+    }
+    if (getDocumentText() !== point.after && !confirm('Il documento contiene altre modifiche. Vuoi sostituirlo con la versione precedente salvata in questa sessione?')) return;
+    applyTextToDoc(point.before);
+    showToast('Versione precedente ripristinata. Il punto resta disponibile fino alla chiusura della sessione.');
 }
 
 document.getElementById('nyra-input').addEventListener('focus', nyraUpdateContextBadge);
