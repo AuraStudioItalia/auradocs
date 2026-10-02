@@ -312,6 +312,34 @@
             gap: 12px;
         }
         .filelist-header h2 { font-size: 18px; font-weight: 600; }
+
+        #desktop-announcement {
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 6px 18px;
+            border-bottom: 1px solid rgba(224, 8, 246, 0.12);
+            background: rgba(224, 8, 246, 0.045);
+            color: var(--text-secondary);
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+        #desktop-announcement[hidden] { display: none; }
+        .desktop-announcement-message { display: flex; align-items: center; gap: 9px; min-width: 0; }
+        .desktop-announcement-message i { color: var(--aura-primary); font-size: 13px; }
+        .desktop-announcement-link { color: var(--aura-primary); font-weight: 600; text-decoration: none; white-space: nowrap; }
+        .desktop-announcement-link:hover { text-decoration: underline; text-underline-offset: 2px; }
+        .desktop-announcement-close {
+            width: 26px; height: 26px; flex: 0 0 26px;
+            display: grid; place-items: center;
+            border: 0; border-radius: 6px;
+            background: transparent; color: var(--text-muted);
+            cursor: pointer; transition: var(--transition);
+        }
+        .desktop-announcement-close:hover { background: var(--bg-hover); color: var(--text-main); }
+
         #mobile-nav-toggle {
             width: 38px; height: 38px; flex: 0 0 38px;
             place-items: center; border: 1px solid var(--border);
@@ -421,6 +449,7 @@
 
         @media (max-width: 768px) {
             #dashboard-sidebar { display: none; }
+            #desktop-announcement { display: none; }
             .filelist-table-header,
             .filelist-row { grid-template-columns: 1fr 44px; }
             .filelist-col-visto, .filelist-col-creato, .filelist-col-loc,
@@ -1334,6 +1363,8 @@
             .canvas { padding: 30px 18px; }
             .toolbar { gap: 4px; }
             #filelist-title { font-size: 16px; }
+            #desktop-announcement { padding: 6px 12px; }
+            .desktop-announcement-message { align-items: flex-start; }
         }
         @media (max-width: 380px) {
             .btn-import-adx span { display: none; }
@@ -1440,6 +1471,16 @@
 
     <!-- MAIN FILE LIST AREA -->
     <div id="dashboard-main">
+        <aside id="desktop-announcement" aria-label="Annuncio Aura Docs Desktop">
+            <div class="desktop-announcement-message">
+                <i class="fas fa-desktop" aria-hidden="true"></i>
+                <span>È arrivata la versione desktop nativa di Aura Docs.</span>
+                <a class="desktop-announcement-link" href="desktop/index.html">Scopri e installa</a>
+            </div>
+            <button class="desktop-announcement-close" type="button" onclick="dismissDesktopAnnouncement()" aria-label="Chiudi annuncio" title="Chiudi annuncio">
+                <i class="fas fa-xmark" aria-hidden="true"></i>
+            </button>
+        </aside>
         <div class="filelist-header">
             <button id="mobile-nav-toggle" onclick="toggleMobileSidebar()" aria-label="Apri navigazione" aria-expanded="false"><i class="fas fa-bars"></i></button>
             <h2 id="filelist-title">Recenti</h2>
@@ -4554,6 +4595,17 @@ function restoreNyraPoint(restorePointId) {
     applyTextToDoc(point.before);
     showToast('Versione precedente ripristinata. Il punto resta disponibile fino alla chiusura della sessione.');
 }
+
+function dismissDesktopAnnouncement() {
+    document.getElementById('desktop-announcement').hidden = true;
+    try { localStorage.setItem('aura-desktop-announcement-dismissed', '1'); } catch (e) {}
+}
+
+try {
+    if (localStorage.getItem('aura-desktop-announcement-dismissed') === '1') {
+        document.getElementById('desktop-announcement').hidden = true;
+    }
+} catch (e) {}
 
 document.getElementById('nyra-input').addEventListener('focus', nyraUpdateContextBadge);
 </script>
